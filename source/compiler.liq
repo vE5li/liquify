@@ -11,16 +11,14 @@ project {
 }
 
 directory {
-    apio            "/usr/share/liquify/data/apio/"
     core            "/usr/share/liquify/data/core/"
     pass            "/usr/share/liquify/data/passes/"
-    module          "/usr/share/liquify/data/module/"
     utility         "/usr/share/shego/library/"
 }
 
 #function {
 
-    #main Function(+arguments) {
+    #main function([arguments]) {
 
         set start_time := time()
         set configuration := call(&function:process_arguments, arguments)
@@ -77,7 +75,7 @@ directory {
         call(&function:#print:success, $"completed in " ~ formatted ~ $"s")
     }
 
-    process_arguments Function(arguments) {
+    process_arguments function(arguments) {
         set configuration := ${ help !false files [] debug !false source "source/" output "data/" }
         set count := length(arguments)
         set index := $2
@@ -117,13 +115,13 @@ directory {
         return configuration
     }
 
-    debug_log Function(debug, +arguments) {
+    debug_log function(debug, [arguments]) {
         if debug {
             call_list(&function:#print:debug, arguments)
         }
     }
 
-    show_help Function() {
+    show_help function() {
         print_line()
         print_line($"usage:")
         print_line($"  $         liquify [options]")
