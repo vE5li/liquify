@@ -43,8 +43,9 @@
         [ value := template(integer) ]
         [ value := template(float) ]
         [ value := template(boolean) ]
-        [ value := template(function) ]
+        [ value := template(tokenizer) ]
         [ value := template(template) ]
+        [ value := template(function) ]
     }
 
     parameter template(resolve[resolve:parameter]) {
@@ -214,6 +215,59 @@
 
     template template(resolve[resolve:template]) {
         [ identifier(template) | merge(pass_handler_list) | merge(flavour_list) ]
+    }
+
+    property_parameter template(resolve[resolve:property_parameter]) {
+        [ operator(immediate) | constant := identifier() ]
+        [ value := template(value) ]
+    }
+
+    property template(resolve[resolve:property]) {
+        [ property := identifier() | operator(open_round) | parameters := list(template(property_parameter), operator(comma)) | operator(close_round) ]
+        [ property := identifier() | operator(open_round) | parameters := $[] | operator(close_round) ]
+    }
+
+    property_list template() {
+        [ operator(open_curly) | properties := list(template(property)) | operator(close_curly) ]
+        [ operator(open_curly) | properties := $[] | operator(close_curly) ]
+    }
+
+    comment_tokenizer template(resolve[resolve:comment_tokenizer]) {
+        [ identifier(comment_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    number_tokenizer template(resolve[resolve:number_tokenizer]) {
+        [ identifier(number_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    character_tokenizer template(resolve[resolve:character_tokenizer]) {
+        [ identifier(character_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    string_tokenizer template(resolve[resolve:string_tokenizer]) {
+        [ identifier(string_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    operator_tokenizer template(resolve[resolve:operator_tokenizer]) {
+        [ identifier(operator_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    keyword_tokenizer template(resolve[resolve:keyword_tokenizer]) {
+        [ identifier(keyword_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    identifier_tokenizer template(resolve[resolve:identifier_tokenizer]) {
+        [ identifier(identifier_tokenizer) | operator(open_round) | operator(close_round) | merge(property_list) ]
+    }
+
+    tokenizer template(resolve[resolve:tokenizer]) {
+        [ tokenizer := template(comment_tokenizer) ]
+        [ tokenizer := template(number_tokenizer) ]
+        [ tokenizer := template(character_tokenizer) ]
+        [ tokenizer := template(string_tokenizer) ]
+        [ tokenizer := template(operator_tokenizer) ]
+        [ tokenizer := template(keyword_tokenizer) ]
+        [ tokenizer := template(identifier_tokenizer) ]
     }
 
     #top template(resolve[resolve:#top]) {

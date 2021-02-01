@@ -357,6 +357,129 @@
             return template_body
         }
 
+        property_parameter function(self) {
+
+            if #present(self, $constant) {
+                if self:constant == $none {
+                    return $#none
+                } else self:constant == $alphabet_upper_case {
+                    return $[ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ]
+                } else self:constant == $alphabet_lower_case {
+                    return $[ a b c d e f g h i j k l m n o p q r s t u v w x y z ]
+                } else {
+                    error($"invalid constant " ~ self:constant)
+                }
+            }
+
+            return pass(self:value)
+        }
+
+        property function(self, entries) {
+            set parameters := $[]
+
+            iterate self:parameters as key, parameter {
+                set parameter := pass(parameter:part)
+                if #list(parameter) {
+                    set parameters := merge(parameters, parameter)
+                } else {
+                    set parameters := append(parameters, parameter)
+                }
+            }
+
+            if self:property == $block_comment {
+                set entries:#block_comments := append(entries:#block_comments, parameters)
+            } else self:property == $note {
+                set entries:#notes := insert(entries:#notes, parameters:1, parameters:2)
+            } else self:property == $line_comment {
+                set entries:#line_comments := append(entries:#line_comments, parameters:1)
+            } else self:property == $delimiter {
+                set entries:#delimiters := append(entries:#delimiters, parameters)
+            } else self:property == $translate {
+                set entries:#translate := insert(entries:#translate, parameters:1, parameters:2)
+            } else self:property == $replace {
+                set entries:#replace := insert(entries:#replace, parameters:1, parameters:2)
+            } else self:property == $prefix {
+                set entries:#prefix := merge(entries:#prefix, parameters)
+            } else self:property == $type_prefix {
+                set entries:#type_prefix := merge(entries:#type_prefix, parameters)
+            } else self:property == $ignored {
+                set entries:#ignored := merge(entries:#ignored, parameters)
+            } else self:property == $invalid {
+                set entries:#invalid := merge(entries:#invalid, parameters)
+            } else self:property == $system {
+                set identifier := parameters:1
+                set digits := remove(parameters, $1)
+                set entries:#systems := insert(entries:#systems, identifier, digits)
+            } else self:property == $float {
+                set entries:#floats := merge(entries:#floats, parameters)
+            } else self:property == $negative {
+                set entries:#negatives := merge(entries:#negatives, parameters)
+            } else self:property == $format {
+                set identifier := parameters:1
+                set prefix := parameters:2
+                set suffix := parameters:3
+
+                if #not_present(entries:#formats, prefix) {
+                    set entries:#formats := insert(entries:#formats, prefix, ${})
+                }
+
+                if #present(entries:#formats[prefix], suffix) {
+                    error($"duplicate format of " ~ entries:#formats[prefix][suffix])
+                }
+
+                set path := path($#scope:entries:#formats, prefix, suffix)
+                modify(path, identifier)
+            } else {
+                error($"invalid property " ~ self:property)
+            }
+
+            return entries
+        }
+
+        comment_tokenizer function(self) {
+            return ${ #notes {} #block_comments [] #line_comments [] }
+        }
+
+        number_tokenizer function(self) {
+            return ${ #systems {} #formats {} #floats [] #negatives [] }
+        }
+
+        character_tokenizer function(self) {
+            return ${ #delimiters [] #replace {} }
+        }
+
+        string_tokenizer function(self) {
+            return ${ #delimiters [] #replace {} }
+        }
+
+        operator_tokenizer function(self) {
+            return ${ #translate {} #invalid [] #ignored [] }
+        }
+
+        keyword_tokenizer function(self) {
+            return ${ #translate {} #invalid [] #ignored [] }
+        }
+
+        identifier_tokenizer function(self) {
+            return ${ #prefix [] #type_prefix [] #invalid [] #ignored [] }
+        }
+
+        tokenizer function(self) {
+            set entries := pass(self:tokenizer)
+
+            iterate self:tokenizer:properties as key, property {
+                set entries := pass(property:part, entries)
+            }
+
+            iterate entries as key, value {
+                if #empty(value) {
+                    set entries := remove(entries, key)
+                }
+            }
+
+            return entries
+        }
+
         #top function(self) {
             set &root:scopes := $[]
             set code := $""
