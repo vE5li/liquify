@@ -78,7 +78,7 @@ directory {
     process_arguments function(arguments) {
         set configuration := ${ help !false files [] debug !false source "source/" output "data/" }
         set count := length(arguments)
-        set index := $2
+        set index := $1
 
         while index <= count {
             set argument := arguments[index]
