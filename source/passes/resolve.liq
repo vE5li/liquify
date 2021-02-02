@@ -6,8 +6,8 @@
             set return_list := $[]
 
             iterate list as key, value {
-                set part := pass(value:part)
-                set return_list := append(return_list, part)
+                set item := pass(value:item)
+                set return_list := append(return_list, item)
             }
 
             return return_list
@@ -17,8 +17,8 @@
             set return_list := $[]
 
             iterate list as key, value {
-                set part := pass(value:part, $!true)
-                set return_list := append(return_list, part)
+                set item := pass(value:item, $!true)
+                set return_list := append(return_list, item)
             }
 
             return return_list
@@ -176,7 +176,7 @@
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
 
             iterate self:entries:statements as key, statement {
-                set statement := pass(statement:part)
+                set statement := pass(statement:item)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
@@ -197,7 +197,7 @@
             }
 
             iterate self:entries:statements as key, statement {
-                set statement := pass(statement:part)
+                set statement := pass(statement:item)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
@@ -228,7 +228,7 @@
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
 
             iterate self:entries:statements as key, statement {
-                set statement := pass(statement:part)
+                set statement := pass(statement:item)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
@@ -257,12 +257,12 @@
                 set key_parameter := list($#data, key_path)
                 set value_paramter := list($#data, value_path)
 
-                set instruction := list($#modify, key_parameter, $[ #last:selector ], value_paramter, $[ #last:instance ])
+                set instruction := list($#modify, key_parameter, $[ #last:key ], value_paramter, $[ #last:value ])
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
             }
 
             iterate self:entries:statements as key, statement {
-                set statement := pass(statement:part)
+                set statement := pass(statement:item)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
@@ -278,12 +278,12 @@
             set &root:scopes := append(&root:scopes, scope)
 
             iterate self:entries:parameters as key, parameter {
-                set parameter := pass(parameter:part)
+                set parameter := pass(parameter:item)
                 set &root:scopes:-1:bytecode := append(&root:scopes:-1:bytecode, parameter)
             }
 
             iterate self:entries:statements as key, statement {
-                set statement := pass(statement:part)
+                set statement := pass(statement:item)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
@@ -378,7 +378,7 @@
             set parameters := $[]
 
             iterate self:entries:parameters as key, parameter {
-                set parameter := pass(parameter:part)
+                set parameter := pass(parameter:item)
                 if #list(parameter) {
                     set parameters := merge(parameters, parameter)
                 } else {
@@ -468,7 +468,7 @@
             set tokenizer := pass(self:entries:tokenizer)
 
             iterate self:entries:tokenizer:entries:properties as key, property {
-                set tokenizer := pass(property:part, tokenizer)
+                set tokenizer := pass(property:item, tokenizer)
             }
 
             iterate tokenizer as key, value {
