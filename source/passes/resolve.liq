@@ -40,54 +40,54 @@
         }
 
         keyword function(self) {
-            return keyword(self:keyword)
+            return keyword(self:entries:keyword)
         }
 
         path function(self) {
-            set steps := call(&function:resolve:compress, self:steps)
+            set steps := call(&function:resolve:compress, self:entries:steps)
             return invoke($#path, steps)
         }
 
         list function(self) {
-            set items := call(&function:resolve:compress, self:items)
+            set items := call(&function:resolve:compress, self:entries:items)
             return invoke($#list, items)
         }
 
         map function(self) {
-            set entries := call(&function:resolve:compress, self:entries)
+            set entries := call(&function:resolve:compress, self:entries:entries)
             return invoke($#map, entries)
         }
 
         boolean function(self) {
-            return self:state == $true
+            return self:entries:state == $true
         }
 
         number function(self) {
-            if self:negative {
-                return negate(self:value)
+            if self:entries:negative {
+                return negate(self:entries:value)
             }
-            return self:value
+            return self:entries:value
         }
 
         value function(self) {
-            return pass(self:value)
+            return pass(self:entries:value)
         }
 
         parameter function(self) {
-            if self:list {
-                return list($#list, self:identifier)
+            if self:entries:list {
+                return list($#list, self:entries:identifier)
             } else {
-                return list($#single, self:identifier)
+                return list($#single, self:entries:identifier)
             }
         }
 
         immediate function(self, flatten) {
-            set immediate := pass(self:immediate)
+            set immediate := pass(self:entries:immediate)
             return list($#data, immediate)
         }
 
         absolute_path function(self, flatten) {
-            set path := pass(self:path)
+            set path := pass(self:entries:path)
 
             if #path(path) {
                 set path:1 := keyword(path:1)
@@ -99,14 +99,14 @@
         }
 
         relative_path function(self, flatten) {
-            set path := pass(self:path)
+            set path := pass(self:entries:path)
             set path := path($#scope, path)
             return list(path)
         }
 
         index function(self, flatten) {
-            set collection := pass(self:collection, $!true)
-            set index := pass(self:index, $!false)
+            set collection := pass(self:entries:collection, $!true)
+            set index := pass(self:entries:index, $!false)
             set instruction := list($#index, collection, index)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
@@ -114,8 +114,8 @@
         }
 
         instruction function(self, flatten) {
-            set instruction_name := keyword(self:instruction)
-            set parameters := call(&function:resolve:compress_flatten, self:parameters)
+            set instruction_name := keyword(self:entries:instruction)
+            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, instruction_name)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
@@ -123,9 +123,9 @@
         }
 
         condition function(self, flatten) {
-            set condition := pass(self:condition)
+            set condition := pass(self:entries:condition)
             set condition := list($#data, condition)
-            set parameters := call(&function:resolve:compress_flatten, self:parameters)
+            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, condition, $#boolean)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
@@ -133,9 +133,9 @@
         }
 
         comparison function(self, flatten) {
-            set left := pass(self:left, $!true)
-            set right := pass(self:right, $!true)
-            set comparitor := list($#data, keyword(self:comparitor))
+            set left := pass(self:entries:left, $!true)
+            set right := pass(self:entries:right, $!true)
+            set comparitor := list($#data, keyword(self:entries:comparitor))
             set instruction := list($#boolean, comparitor, left, right)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
@@ -143,7 +143,7 @@
         }
 
         concatinate function(self, flatten) {
-            set values := call(&function:resolve:compress_flatten, self:values)
+            set values := call(&function:resolve:compress_flatten, self:entries:values)
             set instruction := push(values, $#string)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
@@ -151,37 +151,37 @@
         }
 
         substitue_value function(self, flatten) {
-            return pass(self:value, flatten)
+            return pass(self:entries:value, flatten)
         }
 
         set function(self) {
-            set path := pass(self:path, $!true)
-            set source := pass(self:value, $!false)
+            set path := pass(self:entries:path, $!true)
+            set source := pass(self:entries:value, $!false)
             set destination := push(path, $#data)
             set instruction := list($#modify, destination, source)
             return instruction
         }
 
         return function(self) {
-            if #present(self, $value) {
-                set value := pass(self:value, $!false)
+            if #present(self:entries, $value) {
+                set value := pass(self:entries:value, $!false)
                 return list($#return, value)
             }
             return $[ #return ]
         }
 
         if function(self) {
-            set condition := pass(self:condition, $!false)
+            set condition := pass(self:entries:condition, $!false)
             set instruction := list($#if, $[ #data #true ], condition)
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
 
-            iterate self:statements as key, statement {
+            iterate self:entries:statements as key, statement {
                 set statement := pass(statement:part)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
-            if #present(self, $else) {
-                pass(self:else)
+            if #present(self:entries, $else) {
+                pass(self:entries:else)
             }
 
             return $[ #end ]
@@ -190,22 +190,22 @@
         else function(self) {
             set &root:scopes:-1:bytecode := append(&root:scopes:-1:bytecode, $#else)
 
-            if #present(self, $condition) {
-                set condition := pass(self:condition, $!false)
+            if #present(self:entries, $condition) {
+                set condition := pass(self:entries:condition, $!false)
                 set instruction := list($#if, $[ #data #true ], condition)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
             }
 
-            iterate self:statements as key, statement {
+            iterate self:entries:statements as key, statement {
                 set statement := pass(statement:part)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
 
-            if #present(self, $else) {
-                pass(self:else)
+            if #present(self:entries, $else) {
+                pass(self:entries:else)
             }
 
-            if #present(self, $condition) {
+            if #present(self:entries, $condition) {
                 set &root:scopes:-1:bytecode := append(&root:scopes:-1:bytecode, $#end)
             }
 
@@ -216,7 +216,7 @@
             set scope := map($bytecode, $[], $variable_id, &root:scopes:-1:variable_id)
             set &root:scopes := append(&root:scopes, scope)
 
-            set condition_variable := pass(self:condition, $!true)
+            set condition_variable := pass(self:entries:condition, $!true)
             set variable_id := &root:scopes:-1:variable_id
             set condition_bytecode := &root:scopes:-1:bytecode
 
@@ -227,7 +227,7 @@
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, condition_bytecode)
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
 
-            iterate self:statements as key, statement {
+            iterate self:entries:statements as key, statement {
                 set statement := pass(statement:part)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
@@ -237,23 +237,23 @@
         }
 
         ensure function(self) {
-            set parameters := call(&function:resolve:compress_flatten, self:parameters)
+            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, $[ #data #true ], $#ensure)
             return instruction
         }
 
         call function(self) {
-            pass(self:instruction, $!false)
+            pass(self:entries:instruction, $!false)
             return $[]
         }
 
         iterate function(self) {
-            set collection := pass(self:collection, $!false)
+            set collection := pass(self:entries:collection, $!false)
             set &root:scopes:-1:bytecode := append(&root:scopes:-1:bytecode, $#iterate, collection)
 
-            if #present(self, $key) {
-                set key_path := path($#scope, self:key)
-                set value_path := path($#scope, self:value)
+            if #present(self:entries, $key) {
+                set key_path := path($#scope, self:entries:key)
+                set value_path := path($#scope, self:entries:value)
                 set key_parameter := list($#data, key_path)
                 set value_paramter := list($#data, value_path)
 
@@ -261,7 +261,7 @@
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
             }
 
-            iterate self:statements as key, statement {
+            iterate self:entries:statements as key, statement {
                 set statement := pass(statement:part)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
@@ -270,19 +270,19 @@
         }
 
         statement function(self) {
-            return pass(self:statement)
+            return pass(self:entries:statement)
         }
 
         function function(self) {
             set scope := map($bytecode, $[], $variable_id, $0)
             set &root:scopes := append(&root:scopes, scope)
 
-            iterate self:parameters as key, parameter {
+            iterate self:entries:parameters as key, parameter {
                 set parameter := pass(parameter:part)
                 set &root:scopes:-1:bytecode := append(&root:scopes:-1:bytecode, parameter)
             }
 
-            iterate self:statements as key, statement {
+            iterate self:entries:statements as key, statement {
                 set statement := pass(statement:part)
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, statement)
             }
@@ -293,20 +293,20 @@
         }
 
         pass_handler function(self) {
-            set pass := pass(self:pass)
-            set handlers := call(&function:resolve:compress, self:handlers)
+            set pass := pass(self:entries:pass)
+            set handlers := call(&function:resolve:compress, self:entries:handlers)
             return map(pass, handlers)
         }
 
         type function(self) {
-            set type_list := list(keyword(self:identifier))
+            set type_list := list(keyword(self:entries:identifier))
 
-            if #present(self, $key) {
-                set type_list := append(type_list, self:key)
+            if #present(self:entries, $key) {
+                set type_list := append(type_list, self:entries:key)
             }
 
-            if #present(self, $constraints) {
-                set constraints := call(&function:resolve:compress, self:constraints)
+            if #present(self:entries, $constraints) {
+                set constraints := call(&function:resolve:compress, self:entries:constraints)
 
                 @ TODO: dirty hack, please fix
                 if #list(constraints:1) {
@@ -320,38 +320,38 @@
         }
 
         piece function(self) {
-            if #present(self, $key) {
-                set key := pass(self:key)
+            if #present(self:entries, $key) {
+                set key := pass(self:entries:key)
 
-                if #present(self, $value) {
-                    set value := pass(self:value)
+                if #present(self:entries, $value) {
+                    set value := pass(self:entries:value)
                     return list($#data, key, value)
                 }
 
-                set self:type := insert(self:type, $key, key)
+                set self:entries:type:entries := insert(self:entries:type:entries, $key, key)
             }
 
-            ensure(#not_present(self, $value), $"immediate value must have a key")
-            return pass(self:type)
+            ensure(#not_present(self:entries, $value), $"immediate value must have a key")
+            return pass(self:entries:type)
         }
 
         flavour function(self) {
-            set pieces := call(&function:resolve:compress, self:pieces)
+            set pieces := call(&function:resolve:compress, self:entries:pieces)
             return pieces
         }
 
         template function(self) {
-            ensure(#not_empty(self:flavours), $"template may not be empty")
+            ensure(#not_empty(self:entries:flavours), $"template may not be empty")
             set template_body := $[]
 
-            if #present(self, $pass_handlers) {
-                set pass_handlers := call(&function:resolve:compress, self:pass_handlers)
+            if #present(self:entries, $pass_handlers) {
+                set pass_handlers := call(&function:resolve:compress, self:entries:pass_handlers)
                 set pass_handlers := push(pass_handlers, ${})
                 set passes_map := invoke($#merge, pass_handlers)
                 set template_body := append(template_body, passes_map)
             }
 
-            set flavours := call(&function:resolve:compress, self:flavours)
+            set flavours := call(&function:resolve:compress, self:entries:flavours)
             set template_body := merge(template_body, flavours)
 
             return template_body
@@ -359,25 +359,25 @@
 
         property_parameter function(self) {
 
-            if #present(self, $constant) {
-                if self:constant == $none {
+            if #present(self:entries, $constant) {
+                if self:entries:constant == $none {
                     return $#none
-                } else self:constant == $alphabet_upper_case {
+                } else self:entries:constant == $alphabet_upper_case {
                     return $[ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ]
-                } else self:constant == $alphabet_lower_case {
+                } else self:entries:constant == $alphabet_lower_case {
                     return $[ a b c d e f g h i j k l m n o p q r s t u v w x y z ]
                 } else {
-                    error($"invalid constant " ~ self:constant)
+                    error($"invalid constant " ~ self:entries:constant)
                 }
             }
 
-            return pass(self:value)
+            return pass(self:entries:value)
         }
 
         property function(self, entries) {
             set parameters := $[]
 
-            iterate self:parameters as key, parameter {
+            iterate self:entries:parameters as key, parameter {
                 set parameter := pass(parameter:part)
                 if #list(parameter) {
                     set parameters := merge(parameters, parameter)
@@ -386,35 +386,35 @@
                 }
             }
 
-            if self:property == $block_comment {
+            if self:entries:property == $block_comment {
                 set entries:#block_comments := append(entries:#block_comments, parameters)
-            } else self:property == $note {
+            } else self:entries:property == $note {
                 set entries:#notes := insert(entries:#notes, parameters:1, parameters:2)
-            } else self:property == $line_comment {
+            } else self:entries:property == $line_comment {
                 set entries:#line_comments := append(entries:#line_comments, parameters:1)
-            } else self:property == $delimiter {
+            } else self:entries:property == $delimiter {
                 set entries:#delimiters := append(entries:#delimiters, parameters)
-            } else self:property == $translate {
+            } else self:entries:property == $translate {
                 set entries:#translate := insert(entries:#translate, parameters:1, parameters:2)
-            } else self:property == $replace {
+            } else self:entries:property == $replace {
                 set entries:#replace := insert(entries:#replace, parameters:1, parameters:2)
-            } else self:property == $prefix {
+            } else self:entries:property == $prefix {
                 set entries:#prefix := merge(entries:#prefix, parameters)
-            } else self:property == $type_prefix {
+            } else self:entries:property == $type_prefix {
                 set entries:#type_prefix := merge(entries:#type_prefix, parameters)
-            } else self:property == $ignored {
+            } else self:entries:property == $ignored {
                 set entries:#ignored := merge(entries:#ignored, parameters)
-            } else self:property == $invalid {
+            } else self:entries:property == $invalid {
                 set entries:#invalid := merge(entries:#invalid, parameters)
-            } else self:property == $system {
+            } else self:entries:property == $system {
                 set identifier := parameters:1
                 set digits := remove(parameters, $1)
                 set entries:#systems := insert(entries:#systems, identifier, digits)
-            } else self:property == $float {
+            } else self:entries:property == $float {
                 set entries:#floats := merge(entries:#floats, parameters)
-            } else self:property == $negative {
+            } else self:entries:property == $negative {
                 set entries:#negatives := merge(entries:#negatives, parameters)
-            } else self:property == $format {
+            } else self:entries:property == $format {
                 set identifier := parameters:1
                 set prefix := parameters:2
                 set suffix := parameters:3
@@ -430,7 +430,7 @@
                 set path := path($#scope:entries:#formats, prefix, suffix)
                 modify(path, identifier)
             } else {
-                error($"invalid property " ~ self:property)
+                error($"invalid property " ~ self:entries:property)
             }
 
             return entries
@@ -465,27 +465,27 @@
         }
 
         tokenizer function(self) {
-            set entries := pass(self:tokenizer)
+            set tokenizer := pass(self:entries:tokenizer)
 
-            iterate self:tokenizer:properties as key, property {
-                set entries := pass(property:part, entries)
+            iterate self:entries:tokenizer:entries:properties as key, property {
+                set tokenizer := pass(property:part, tokenizer)
             }
 
-            iterate entries as key, value {
+            iterate tokenizer as key, value {
                 if #empty(value) {
-                    set entries := remove(entries, key)
+                    set tokenizer := remove(tokenizer, key)
                 }
             }
 
-            return entries
+            return tokenizer
         }
 
         #top function(self) {
             set &root:scopes := $[]
             set code := $""
 
-            if #present(self, $values) {
-                set values := call(&function:resolve:compress, self:values)
+            if #present(self:entries, $values) {
+                set values := call(&function:resolve:compress, self:entries:values)
                 iterate values as key, value {
                     set code := code ~ serialize(value) ~ $' '
                 }
