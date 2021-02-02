@@ -1,4 +1,4 @@
-#template {
+#templates {
 
     keyword template(resolve[resolve:keyword]) {
         [ operator(keyword) | keyword := identifier() ]

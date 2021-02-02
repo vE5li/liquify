@@ -1,4 +1,4 @@
-#function {
+#functions {
 
     resolve {
 
@@ -44,17 +44,17 @@
         }
 
         path function(self) {
-            set steps := call(&function:resolve:compress, self:entries:steps)
+            set steps := call($resolve:compress, self:entries:steps)
             return invoke($#path, steps)
         }
 
         list function(self) {
-            set items := call(&function:resolve:compress, self:entries:items)
+            set items := call($resolve:compress, self:entries:items)
             return invoke($#list, items)
         }
 
         map function(self) {
-            set entries := call(&function:resolve:compress, self:entries:entries)
+            set entries := call($resolve:compress, self:entries:entries)
             return invoke($#map, entries)
         }
 
@@ -110,26 +110,26 @@
             set instruction := list($#index, collection, index)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call(&function:resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, flatten)
         }
 
         instruction function(self, flatten) {
             set instruction_name := keyword(self:entries:instruction)
-            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, instruction_name)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call(&function:resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, flatten)
         }
 
         condition function(self, flatten) {
             set condition := pass(self:entries:condition)
             set condition := list($#data, condition)
-            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, condition, $#boolean)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call(&function:resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, flatten)
         }
 
         comparison function(self, flatten) {
@@ -139,15 +139,15 @@
             set instruction := list($#boolean, comparitor, left, right)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call(&function:resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, flatten)
         }
 
         concatinate function(self, flatten) {
-            set values := call(&function:resolve:compress_flatten, self:entries:values)
+            set values := call($resolve:compress_flatten, self:entries:values)
             set instruction := push(values, $#string)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call(&function:resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, flatten)
         }
 
         substitue_value function(self, flatten) {
@@ -237,7 +237,7 @@
         }
 
         ensure function(self) {
-            set parameters := call(&function:resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_flatten, self:entries:parameters)
             set instruction := push(parameters, $[ #data #true ], $#ensure)
             return instruction
         }
@@ -294,7 +294,7 @@
 
         pass_handler function(self) {
             set pass := pass(self:entries:pass)
-            set handlers := call(&function:resolve:compress, self:entries:handlers)
+            set handlers := call($resolve:compress, self:entries:handlers)
             return map(pass, handlers)
         }
 
@@ -306,7 +306,7 @@
             }
 
             if #present(self:entries, $constraints) {
-                set constraints := call(&function:resolve:compress, self:entries:constraints)
+                set constraints := call($resolve:compress, self:entries:constraints)
 
                 @ TODO: dirty hack, please fix
                 if #list(constraints:1) {
@@ -336,7 +336,7 @@
         }
 
         flavour function(self) {
-            set pieces := call(&function:resolve:compress, self:entries:pieces)
+            set pieces := call($resolve:compress, self:entries:pieces)
             return pieces
         }
 
@@ -345,13 +345,13 @@
             set template_body := $[]
 
             if #present(self:entries, $pass_handlers) {
-                set pass_handlers := call(&function:resolve:compress, self:entries:pass_handlers)
+                set pass_handlers := call($resolve:compress, self:entries:pass_handlers)
                 set pass_handlers := push(pass_handlers, ${})
                 set passes_map := invoke($#merge, pass_handlers)
                 set template_body := append(template_body, passes_map)
             }
 
-            set flavours := call(&function:resolve:compress, self:entries:flavours)
+            set flavours := call($resolve:compress, self:entries:flavours)
             set template_body := merge(template_body, flavours)
 
             return template_body
@@ -485,7 +485,7 @@
             set code := $""
 
             if #present(self:entries, $values) {
-                set values := call(&function:resolve:compress, self:entries:values)
+                set values := call($resolve:compress, self:entries:values)
                 iterate values as key, value {
                     set code := code ~ serialize(value) ~ $' '
                 }

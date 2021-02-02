@@ -16,15 +16,15 @@ directory {
     utility         "/usr/share/shego/library/"
 }
 
-#function {
+#functions {
 
     #main function([arguments]) {
 
         set start_time := time()
-        set configuration := call(&function:process_arguments, arguments)
+        set configuration := call($process_arguments, arguments)
 
         if configuration:help {
-            call(&function:show_help)
+            call($show_help)
             terminate
         }
 
@@ -41,11 +41,11 @@ directory {
             set &root := merge(&root, library_data)
         }
 
-        call(&function:debug_log, configuration:debug, $"libraries loaded")
-        call(&function:debug_log, configuration:debug, $"loading the pipeline")
+        call($debug_log, configuration:debug, $"libraries loaded")
+        call($debug_log, configuration:debug, $"loading the pipeline")
 
         iterate compiler:#pipeline as key, pass {
-            call(&function:debug_log, configuration:debug, $"loading pass " ~ pass)
+            call($debug_log, configuration:debug, $"loading pass " ~ pass)
             set pass_data := read_map(&root:directory:pass ~ pass ~ $".data")
             set compiler := merge(compiler, pass_data)
         }
@@ -55,14 +55,14 @@ directory {
         set files := split(result:output, $'\n', $!true)
 
         iterate files as key, input_file {
-            call(&function:debug_log, configuration:debug, $"compiling file " ~ &root:#color:magenta ~ input_file ~ &root:#color:none)
+            call($debug_log, configuration:debug, $"compiling file " ~ &root:#color:magenta ~ input_file ~ &root:#color:none)
 
             set content := read_file(input_file)
-            call(&function:debug_log, configuration:debug, $"tokenizing... ")
+            call($debug_log, configuration:debug, $"tokenizing... ")
             set tokenizer_data := tokenize(compiler, content, input_file, $!false)
-            call(&function:debug_log, configuration:debug, $"parsing... ")
+            call($debug_log, configuration:debug, $"parsing... ")
             set parser_data := parse(compiler, tokenizer_data:token_stream, tokenizer_data:registry)
-            call(&function:debug_log, configuration:debug, $"building... ")
+            call($debug_log, configuration:debug, $"building... ")
             set build_data := build(compiler, parser_data)
 
             system($"rm", input_file)
@@ -72,7 +72,7 @@ directory {
 
         set delta_time := divide(subtract(time(), start_time), $1000.0) @ time() - start_time  / $1000.0
         set formatted := slice(string(delta_time), $1, $3)
-        call(&function:#print:success, $"completed in " ~ formatted ~ $"s")
+        call($#print:success, $"completed in " ~ formatted ~ $"s")
     }
 
     process_arguments function(arguments) {
@@ -117,7 +117,7 @@ directory {
 
     debug_log function(debug, [arguments]) {
         if debug {
-            call_list(&function:#print:debug, arguments)
+            call_list($#print:debug, arguments)
         }
     }
 
