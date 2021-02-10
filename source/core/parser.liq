@@ -80,8 +80,8 @@
     }
 
     condition template(resolve[resolve:condition]) {
-        [ condition := template(keyword) | operator(open_round) | parameters := list(template(substitue_value), operator(comma)) | operator(close_round) ]
-        [ condition := template(keyword) | operator(open_round) | parameters := $[] | operator(close_round) ]
+        [ operator(condition) | condition := identifier() | operator(open_round) | parameters := list(template(substitue_value), operator(comma)) | operator(close_round) ]
+        [ operator(condition) | condition := identifier() | operator(open_round) | parameters := $[] | operator(close_round) ]
     }
 
     comparitor template() {

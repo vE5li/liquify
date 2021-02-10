@@ -75,6 +75,7 @@
     translate('}', close_curly)
     translate('(', open_round)
     translate(')', close_round)
+    translate('?', condition)
     translate('!', boolean)
     translate('$', immediate)
     translate('+', add)

@@ -87,20 +87,20 @@ directory {
                 set configuration:help := $!true
             } else argument == $"-s" {
                 ensure(count > index, $"expected source directory")
-                ensure(#not_present(&scope, $source_set), $"source directory may only be set once")
+                ensure(?not_present(&scope, $source_set), $"source directory may only be set once")
 
                 set index := add(index, $1) @index + $1
                 set configuration:source := arguments[index]
                 set source_set := $!true
             } else argument == $"-o" {
                 ensure(count > index, $"expected output directory")
-                ensure(#not_present(&scope, $output_set), $"output directory may only be set once")
+                ensure(?not_present(&scope, $output_set), $"output directory may only be set once")
 
                 set index := add(index, $1) @index + $1
                 set configuration:output := arguments[index]
                 set output_set := $!true
             } else argument == $"-d" {
-                ensure(#not_present(&scope, $debug_set), $"debug flag may only be set once")
+                ensure(?not_present(&scope, $debug_set), $"debug flag may only be set once")
                 set configuration:debug := $!true
                 set debug_set := $!true
             } else {
