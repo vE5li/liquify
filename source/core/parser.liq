@@ -54,7 +54,7 @@
     }
 
     parameter_list template() {
-        [ operator(open_round) | parameters := list(template(parameter), operator(comma)) | operator(close_round) ]
+        [ operator(open_round) | parameters := list(template(parameter), operator(comma, assign)) | operator(close_round) ]
         [ operator(open_round) | parameters := $[] | operator(close_round) ]
     }
 
@@ -75,7 +75,7 @@
     }
 
     instruction template(resolve[resolve:instruction]) {
-        [ instruction := identifier() | operator(open_round) | parameters := list(template(substitue_value), operator(comma)) | operator(close_round) ]
+        [ instruction := identifier() | operator(open_round) | parameters := list(template(substitue_value), operator(comma, assign)) | operator(close_round) ]
         [ instruction := identifier() | operator(open_round) | parameters := $[] | operator(close_round) ]
     }
 

@@ -28,7 +28,7 @@ directory {
             terminate
         }
 
-        set compiler := map($debug, configuration:debug, $#pipeline, &root:pipeline)
+        set compiler := map($debug := configuration:debug, $#pipeline := &root:pipeline)
 
         iterate &root:core as key, file {
             set core_data := read_map(&root:directory:core ~ file ~ $".data")

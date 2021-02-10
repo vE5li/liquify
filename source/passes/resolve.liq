@@ -295,7 +295,7 @@
         pass_handler function(self) {
             set pass := pass(self:entries:pass)
             set handlers := call($resolve:compress, self:entries:handlers)
-            return map(pass, handlers)
+            return map(pass := handlers)
         }
 
         type function(self) {
