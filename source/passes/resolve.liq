@@ -30,13 +30,88 @@
             }
 
             set id := &root:scopes:-1:variable_id
-            set &root:scopes:-1:variable_id := add(id, $1) @ id + $1
+            set &root:scopes:-1:variable_id := id + $1
 
             set variable_name := path($#scope, identifier($_ ~ id))
             set instruction := list($#modify, list($#data, variable_name), $[ #last ])
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
 
             return list(variable_name)
+        }
+
+        combine_equasion function(terms) {
+            set combined := $[]
+
+            iterate terms as key, value {
+                set combined := append(combined, value:item)
+
+                if ?present(value, $separator) {
+                    set operator := value:separator:entries:operator
+                    set combined := append(combined, operator)
+                }
+            }
+
+            return combined
+        }
+
+        pull_operators function(source, [operators]) {
+            set index := $2
+            set length := length(source)
+
+            while index < length {
+                if length == $3 {
+                    return source
+                }
+
+                if ?contains(operators, source[index]) {
+
+                    set replace_index := index - $1
+                    set left_operant := source[replace_index]
+                    set operator := source[index]
+                    set right_operant := source[index + $1]
+                    set entry := list(left_operant, operator, right_operant)
+
+                    set source := remove(source, replace_index)
+                    set source := remove(source, replace_index)
+                    set source := overwrite(source, replace_index, entry)
+                    set length := length(source)
+                } else {
+                    set index := index + $2
+                }
+            }
+
+            return source
+        }
+
+        merge_arithmatic_term function(term, flatten) {
+
+            if ?map(term) {
+                return pass(term, flatten)
+            }
+
+            set left_operant := call($resolve:merge_arithmatic_term, term:1, $!true)
+            set operator := keyword(term:2)
+            set right_operant := call($resolve:merge_arithmatic_term, term:3, $!true)
+            set instruction := list(operator, left_operant, right_operant)
+
+            set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
+            return call($resolve:temporary_variable, flatten)
+        }
+
+        merge_logical_term function(term, flatten) {
+
+            if ?map(term) {
+                return pass(term, flatten)
+            }
+
+            set left_operant := call($resolve:merge_logical_term, term:1, $!true)
+            set operator := split(term:2, $"logical_", $!true)[$1]
+            set right_operant := call($resolve:merge_logical_term, term:3, $!true)
+            set operator_parameter := list($#data, keyword(operator))
+            set instruction := list($#boolean, operator_parameter, left_operant, right_operant)
+
+            set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
+            return call($resolve:temporary_variable, flatten)
         }
 
         keyword function(self) {
@@ -132,14 +207,29 @@
             return call($resolve:temporary_variable, flatten)
         }
 
-        comparison function(self, flatten) {
-            set left := pass(self:entries:left, $!true)
-            set right := pass(self:entries:right, $!true)
-            set comparitor := list($#data, keyword(self:entries:comparitor))
-            set instruction := list($#boolean, comparitor, left, right)
+        arithmatic_equasion function(self, flatten) {
+            set terms := call($resolve:combine_equasion, self:entries:terms)
 
-            set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            set terms := call($resolve:pull_operators, terms, $multiply, $divide, $remainder)
+            set terms := call($resolve:pull_operators, terms, $add, $subtract)
+            set terms := call($resolve:pull_operators, terms, $shift_left, $shift_right)
+            set terms := call($resolve:pull_operators, terms, $and)
+            set terms := call($resolve:pull_operators, terms, $xor)
+            set terms := call($resolve:pull_operators, terms, $or)
+
+            return call($resolve:merge_arithmatic_term, terms, flatten)
+        }
+
+        logical_equasion function(self, flatten) {
+            set terms := call($resolve:combine_equasion, self:entries:terms)
+
+            set terms := call($resolve:pull_operators, terms, $bigger, $smaller, $not_smaller, $not_bigger)
+            set terms := call($resolve:pull_operators, terms, $equals, $not_equals)
+            set terms := call($resolve:pull_operators, terms, $logical_and)
+            set terms := call($resolve:pull_operators, terms, $logical_xor)
+            set terms := call($resolve:pull_operators, terms, $logical_or)
+
+            return call($resolve:merge_logical_term, terms, flatten)
         }
 
         concatinate function(self, flatten) {

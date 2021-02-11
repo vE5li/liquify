@@ -84,27 +84,37 @@
         [ operator(condition) | condition := identifier() | operator(open_round) | parameters := $[] | operator(close_round) ]
     }
 
-    comparitor template() {
-        [ comparitor := operator(equals) ]
-        [ comparitor := operator(not_equals) ]
-        [ comparitor := operator(smaller) ]
-        [ comparitor := operator(not_smaller) ]
-        [ comparitor := operator(bigger) ]
-        [ comparitor := operator(not_bigger) ]
+    arithmatic_operator template() {
+        [ operator := operator(shift_left) ]
+        [ operator := operator(shift_right) ]
+        [ operator := operator(add) ]
+        [ operator := operator(subtract) ]
+        [ operator := operator(multiply) ]
+        [ operator := operator(divide) ]
+        [ operator := operator(modulo) ]
+        [ operator := operator(and) ]
+        [ operator := operator(xor) ]
+        [ operator := operator(or) ]
     }
 
-    comparison template(resolve[resolve:comparison]) {
-        [ left := template(substitue_value) | merge(comparitor) | right := template(substitue_value) ]
+    arithmatic_equasion template(resolve[resolve:arithmatic_equasion]) {
+        [ terms := confirmed(template(substitue_value), template(arithmatic_operator)) ]
     }
 
     logical_operator template() {
+        [ operator := operator(equals) ]
+        [ operator := operator(not_equals) ]
+        [ operator := operator(smaller) ]
+        [ operator := operator(not_smaller) ]
+        [ operator := operator(bigger) ]
+        [ operator := operator(not_bigger) ]
         [ operator := operator(logical_and) ]
         [ operator := operator(logical_or) ]
         [ operator := operator(logical_xor) ]
     }
 
     logical_equasion template(resolve[resolve:logical_equasion]) {
-        [ values := confirmed(template(substitue_value), template(logical_operator)) ]
+        [ terms := confirmed(template(substitue_value), template(logical_operator)) ]
     }
 
     concatinate template(resolve[resolve:concatinate]) {
@@ -118,8 +128,8 @@
         [ value := template(index) ]
         [ value := template(instruction) ]
         [ value := template(condition) ]
-        [ value := template(comparison) ]
         [ value := template(logical_equasion) ]
+        [ value := template(arithmatic_equasion) ]
         [ value := template(concatinate) ]
         [ operator(open_round) | value := template(substitue_value) | operator(close_round) ]
     }

@@ -62,7 +62,6 @@ directory {
             set output_file := slice(input_file, $1, $-4) ~ $"data"
             set content := read_file(input_file)
 
-            @ if configuration:caching && ?present(cache, input_file) && cache[input_file][$source] == content {
             if configuration:caching {
                 if ?present(cache, input_file) {
                     if cache[input_file][$source] == content {
@@ -94,7 +93,7 @@ directory {
             call($save_cache, configuration:debug, cache)
         }
 
-        set delta_time := divide(subtract(time(), start_time), $1000.0) @ time() - start_time  / $1000.0
+        set delta_time := (time() - start_time) / $1000.0
         set formatted := slice(string(delta_time), $1, $3)
         call($#print:success, $"completed in " ~ formatted ~ $"s")
     }
@@ -126,14 +125,14 @@ directory {
                 ensure(count > index, $"expected source directory")
                 ensure(?not_present(&scope, $source_set), $"source directory may only be set once")
 
-                set index := add(index, $1) @index + $1
+                set index := index + $1
                 set configuration:source := arguments[index]
                 set source_set := $!true
             } else argument == $"-o" {
                 ensure(count > index, $"expected output directory")
                 ensure(?not_present(&scope, $output_set), $"output directory may only be set once")
 
-                set index := add(index, $1) @index + $1
+                set index := index + $1
                 set configuration:output := arguments[index]
                 set output_set := $!true
             } else argument == $"-c" {
@@ -150,7 +149,7 @@ directory {
                 break
             }
 
-            set index := add(index, $1) @ index + $1
+            set index := index + $1
         }
 
         return configuration
