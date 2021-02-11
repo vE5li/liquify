@@ -70,7 +70,7 @@ directory {
                 }
             }
 
-            call($debug_log, configuration:debug, $"compiling file " ~ &root:#color:magenta ~ input_file ~ &root:#color:none)
+            call($#print:color, &root:#color:cyan, $"build", $"compiling file " ~ input_file)
             call($debug_log, configuration:debug, $"tokenizing... ")
             set tokenizer_data := tokenize(compiler, content, input_file, $!false)
             call($debug_log, configuration:debug, $"parsing... ")
