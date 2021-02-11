@@ -62,11 +62,14 @@ directory {
             set output_file := slice(input_file, $1, $-4) ~ $"data"
             set content := read_file(input_file)
 
-            if configuration:caching { @ configuration:caching && ?present(cache, content)
-                if ?present(cache, content) {
-                    system($"rm", input_file)
-                    write_file(output_file, cache[content])
-                    continue()
+            @ if configuration:caching && ?present(cache, input_file) && cache[input_file][$source] == content {
+            if configuration:caching {
+                if ?present(cache, input_file) {
+                    if cache[input_file][$source] == content {
+                        system($"rm", input_file)
+                        write_file(output_file, cache[input_file][$compiled])
+                        continue()
+                    }
                 }
             }
 
@@ -82,7 +85,8 @@ directory {
             system($"rm", input_file)
 
             if configuration:caching {
-                set cache := overwrite(cache, content, build_data:code)
+                set entry := map($source := content, $compiled := build_data:code)
+                set cache := overwrite(cache, input_file, entry)
             }
         }
 
