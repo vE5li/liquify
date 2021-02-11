@@ -50,14 +50,27 @@ directory {
             set compiler := merge(compiler, pass_data)
         }
 
+        if configuration:caching {
+            set cache := call($load_cache, configuration:debug)
+        }
+
         system($"cp", $"-r", $"-T", configuration:source, configuration:output)
-        set result := system($"find", configuration:output, $"-name", $"*.liq")
+        set result := system($"find", configuration:output, $"-name", $"*.liq") @ fix this to use the source directory
         set files := split(result:output, $'\n', $!true)
 
         iterate files as key, input_file {
-            call($debug_log, configuration:debug, $"compiling file " ~ &root:#color:magenta ~ input_file ~ &root:#color:none)
-
+            set output_file := slice(input_file, $1, $-4) ~ $"data"
             set content := read_file(input_file)
+
+            if configuration:caching { @ configuration:caching && ?present(cache, content)
+                if ?present(cache, content) {
+                    system($"rm", input_file)
+                    write_file(output_file, cache[content])
+                    continue()
+                }
+            }
+
+            call($debug_log, configuration:debug, $"compiling file " ~ &root:#color:magenta ~ input_file ~ &root:#color:none)
             call($debug_log, configuration:debug, $"tokenizing... ")
             set tokenizer_data := tokenize(compiler, content, input_file, $!false)
             call($debug_log, configuration:debug, $"parsing... ")
@@ -65,9 +78,16 @@ directory {
             call($debug_log, configuration:debug, $"building... ")
             set build_data := build(compiler, parser_data)
 
-            system($"rm", input_file)
-            set output_file := slice(input_file, $1, $-4) ~ $"data"
             write_file(output_file, build_data:code)
+            system($"rm", input_file)
+
+            if configuration:caching {
+                set cache := overwrite(cache, content, build_data:code)
+            }
+        }
+
+        if configuration:caching {
+            call($save_cache, configuration:debug, cache)
         }
 
         set delta_time := divide(subtract(time(), start_time), $1000.0) @ time() - start_time  / $1000.0
@@ -75,8 +95,21 @@ directory {
         call($#print:success, $"completed in " ~ formatted ~ $"s")
     }
 
+    load_cache function(debug) {
+        set cache_file := environment($"HOME") ~ $"/.cache/liquify"
+        call($debug_log, debug, $"loading cache from file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
+        system($"touch", cache_file)
+        return read_map(cache_file)
+    }
+
+    save_cache function(debug, cache) {
+        set cache_file := environment($"HOME") ~ $"/.cache/liquify"
+        call($debug_log, debug, $"saving cache to file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
+        write_map(cache_file, cache)
+    }
+
     process_arguments function(arguments) {
-        set configuration := ${ help !false files [] debug !false source "source/" output "data/" }
+        set configuration := ${ help !false caching !true files [] debug !false source "source/" output "data/" }
         set count := length(arguments)
         set index := $1
 
@@ -99,6 +132,10 @@ directory {
                 set index := add(index, $1) @index + $1
                 set configuration:output := arguments[index]
                 set output_set := $!true
+            } else argument == $"-c" {
+                ensure(?not_present(&scope, $caching_set), $"disable caching flag may only be set once")
+                set configuration:caching := $!false
+                set caching_set := $!true
             } else argument == $"-d" {
                 ensure(?not_present(&scope, $debug_set), $"debug flag may only be set once")
                 set configuration:debug := $!true
@@ -128,6 +165,7 @@ directory {
         print_line()
         print_line($"options:")
         print_line($" -h         show help menu")
+        print_line($" -c         disable caching")
         print_line($" -d         turn on debug mode")
         print_line($" -s         set source directory")
         print_line($" -o         set output directory")
