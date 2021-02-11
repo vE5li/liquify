@@ -145,9 +145,9 @@ directory {
                 set configuration:debug := $!true
                 set debug_set := $!true
             } else {
-                print_line(string($"invalid flag ", argument)) @($"invalid flag " ~ argument)
+                print_line($"invalid flag " ~ argument)
                 set configuration:help := $!true
-                @break
+                break
             }
 
             set index := add(index, $1) @ index + $1

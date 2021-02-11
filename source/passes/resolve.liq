@@ -170,6 +170,14 @@
             return $[ #return ]
         }
 
+        break function(self) {
+            return $[ #break ]
+        }
+
+        continue function(self) {
+            return $[ #continue ]
+        }
+
         if function(self) {
             set condition := pass(self:entries:condition, $!false)
             set instruction := list($#if, $[ #data #true ], condition)

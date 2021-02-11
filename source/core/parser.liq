@@ -134,6 +134,14 @@
         [ identifier(terminate) ]
     }
 
+    break template(resolve[resolve:break]) {
+        [ identifier(break) ]
+    }
+
+    continue template(resolve[resolve:continue]) {
+        [ identifier(continue) ]
+    }
+
     if template(resolve[resolve:if]) {
         [ identifier(if) | condition := template(substitue_value) | merge(scope) | else := template(else) ]
         [ identifier(if) | condition := template(substitue_value) | merge(scope) ]
@@ -165,6 +173,8 @@
     statement template(resolve[resolve:statement]) {
         [ statement := template(set) ]
         [ statement := template(return) ]
+        [ statement := template(break) ]
+        [ statement := template(continue) ]
         [ statement := template(if) ]
         [ statement := template(while) ]
         [ statement := template(ensure) ]
