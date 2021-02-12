@@ -13,7 +13,15 @@ project {
 directory {
     core            "/usr/share/liquify/data/core/"
     pass            "/usr/share/liquify/data/passes/"
-    utility         "/usr/share/shego/library/"
+    utility         "/usr/share/shego/data/"
+}
+
+command_lookup {
+    help            { flag "-h" long "--help"       environment "LIQUIFY_SHOW_HELP"         default !false      once !false }
+    debug           { flag "-d" long "--debug"      environment "LIQUIFY_DEBUG"             default !false      once !true  }
+    caching         { flag "-c" long "--no-caching" environment "LIQUIFY_ENABLE_CACHING"    default !true       once !true  }
+    source          { flag "-s" long "--source"     environment "LIQUIFY_SOURCE_DIRECTORY"  default "source/"   once !true  }
+    output          { flag "-o" long "--output"     environment "LIQUIFY_OUTPUT_DIRECTORY"  default "data/"     once !true  }
 }
 
 #functions {
@@ -21,7 +29,14 @@ directory {
     #main function([arguments]) {
 
         set start_time := time()
-        set configuration := call($process_arguments, arguments)
+        set dependencies := $[ format file color debug position interface ]
+
+        iterate dependencies as key, file {
+            set library_data := read_map(&root:directory:utility ~ file ~ $".data")
+            set &root := merge(&root, library_data)
+        }
+
+        set configuration := call($#interface:process_arguments, &root:command_lookup, arguments)
 
         if configuration:help {
             call($show_help)
@@ -109,50 +124,6 @@ directory {
         set cache_file := environment($"HOME") ~ $"/.cache/liquify"
         call($debug_log, debug, $"saving cache to file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
         write_map(cache_file, cache)
-    }
-
-    process_arguments function(arguments) {
-        set configuration := ${ help !false caching !true files [] debug !false source "source/" output "data/" }
-        set count := length(arguments)
-        set index := $1
-
-        while index <= count {
-            set argument := arguments[index]
-
-            if argument == $"-h" {
-                set configuration:help := $!true
-            } else argument == $"-s" {
-                ensure(count > index, $"expected source directory")
-                ensure(?not_present(&scope, $source_set), $"source directory may only be set once")
-
-                set index := index + $1
-                set configuration:source := arguments[index]
-                set source_set := $!true
-            } else argument == $"-o" {
-                ensure(count > index, $"expected output directory")
-                ensure(?not_present(&scope, $output_set), $"output directory may only be set once")
-
-                set index := index + $1
-                set configuration:output := arguments[index]
-                set output_set := $!true
-            } else argument == $"-c" {
-                ensure(?not_present(&scope, $caching_set), $"disable caching flag may only be set once")
-                set configuration:caching := $!false
-                set caching_set := $!true
-            } else argument == $"-d" {
-                ensure(?not_present(&scope, $debug_set), $"debug flag may only be set once")
-                set configuration:debug := $!true
-                set debug_set := $!true
-            } else {
-                print_line($"invalid flag " ~ argument)
-                set configuration:help := $!true
-                break
-            }
-
-            set index := index + $1
-        }
-
-        return configuration
     }
 
     debug_log function(debug, [arguments]) {
