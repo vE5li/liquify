@@ -1,19 +1,18 @@
-core            [ tokenizer parser ]
-
-dependencies    [ format file color debug position ]
-
-pipeline        [ resolve ]
-
 project {
     name            "liquify"
     author          "ve5li"
     contact         "ve5li@tuta.io"
 }
 
-directory {
+directories {
     core            "/usr/share/liquify/data/core/"
     pass            "/usr/share/liquify/data/passes/"
     utility         "/usr/share/shego/data/"
+}
+
+extentions {
+    liquify         "liq"
+    data            "data"
 }
 
 command_lookup {
@@ -29,10 +28,10 @@ command_lookup {
     #main function([arguments]) {
 
         set start_time := time()
-        set dependencies := $[ format file color debug position interface ]
+        set dependencies := $[ format color debug interface ]
 
         iterate dependencies as key, file {
-            set library_data := read_map(&root:directory:utility ~ file ~ $".data")
+            set library_data := read_map(&root:directories:utility ~ file ~ $'.' ~ &root:extentions:data)
             set &root := merge(&root, library_data)
         }
 
@@ -43,15 +42,18 @@ command_lookup {
             terminate
         }
 
-        set compiler := map($debug := configuration:debug, $#pipeline := &root:pipeline)
+        set compiler_core := $[ tokenizer parser ]
+        set compiler_pipeline := $[ resolve ]
+        set compiler_dependencies := $[ format color debug position ]
+        set compiler := map($debug := configuration:debug, $#pipeline := compiler_pipeline)
 
-        iterate &root:core as key, file {
-            set core_data := read_map(&root:directory:core ~ file ~ $".data")
+        iterate compiler_core as key, file {
+            set core_data := read_map(&root:directories:core ~ file ~ $'.' ~ &root:extentions:data)
             set compiler := merge(compiler, core_data)
         }
 
-        iterate &root:dependencies as key, file {
-            set library_data := read_map(&root:directory:utility ~ file ~ $".data")
+        iterate compiler_dependencies as key, file {
+            set library_data := read_map(&root:directories:utility ~ file ~ $'.' ~ &root:extentions:data)
             set compiler := merge(compiler, library_data)
             set &root := merge(&root, library_data)
         }
@@ -61,7 +63,7 @@ command_lookup {
 
         iterate compiler:#pipeline as key, pass {
             call($debug_log, configuration:debug, $"loading pass " ~ pass)
-            set pass_data := read_map(&root:directory:pass ~ pass ~ $".data")
+            set pass_data := read_map(&root:directories:pass ~ pass ~ $'.' ~ &root:extentions:data)
             set compiler := merge(compiler, pass_data)
         }
 
@@ -70,11 +72,11 @@ command_lookup {
         }
 
         system($"cp", $"-r", $"-T", configuration:source, configuration:output)
-        set result := system($"find", configuration:output, $"-name", $"*.liq") @ fix this to use the source directory
+        set result := system($"find", configuration:output, $"-name", $"*." ~ &root:extentions:liquify) @ fix this to use the source directory
         set files := split(result:output, $'\n', $!true)
 
         iterate files as key, input_file {
-            set output_file := slice(input_file, $1, $-4) ~ $"data"
+            set output_file := slice(input_file, $1, $-4) ~ &root:extentions:data
             set content := read_file(input_file)
 
             if configuration:caching {
@@ -114,14 +116,14 @@ command_lookup {
     }
 
     load_cache function(debug) {
-        set cache_file := environment($"HOME") ~ $"/.cache/liquify"
+        set cache_file := environment($"HOME") ~ $"/.cache/liquify." ~ &root:extentions:data
         call($debug_log, debug, $"loading cache from file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
         system($"touch", cache_file)
         return read_map(cache_file)
     }
 
     save_cache function(debug, cache) {
-        set cache_file := environment($"HOME") ~ $"/.cache/liquify"
+        set cache_file := environment($"HOME") ~ $"/.cache/liquify." ~ &root:extentions:data
         call($debug_log, debug, $"saving cache to file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
         write_map(cache_file, cache)
     }
