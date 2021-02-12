@@ -122,6 +122,7 @@
     }
 
     substitue_value template(resolve[resolve:substitue_value]) {
+        [ operator(open_round) | value := template(substitue_value) | operator(close_round) ]
         [ value := template(immediate) ]
         [ value := template(absolute_path) ]
         [ value := template(relative_path) ]
@@ -131,7 +132,6 @@
         [ value := template(logical_equasion) ]
         [ value := template(arithmatic_equasion) ]
         [ value := template(concatinate) ]
-        [ operator(open_round) | value := template(substitue_value) | operator(close_round) ]
     }
 
     @ TODO: not substitue_value in the front
