@@ -91,7 +91,7 @@ command_lookup {
 
             call($#print:color, &root:#color:cyan, $"build", $"compiling file " ~ &root:#color:cyan ~ input_file ~ &root:#color:none)
             call($debug_log, configuration:debug, $"tokenizing... ")
-            set tokenizer_data := tokenize(compiler, content, input_file, $!false)
+            set tokenizer_data := tokenize(compiler, content, input_file, $!false, $!true)
             call($debug_log, configuration:debug, $"parsing... ")
             set parser_data := parse(compiler, tokenizer_data:token_stream, tokenizer_data:registry)
             call($debug_log, configuration:debug, $"building... ")
