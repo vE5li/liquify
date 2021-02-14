@@ -2,7 +2,7 @@
 
     resolve {
 
-        compress function(list) {
+        compress function(list: list) {
             set return_list := $[]
 
             iterate list as key, value {
@@ -13,7 +13,7 @@
             return return_list
         }
 
-        compress_flatten function(list) {
+        compress_expand function(list: list) {
             set return_list := $[]
 
             iterate list as key, value {
@@ -24,8 +24,8 @@
             return return_list
         }
 
-        temporary_variable function(flatten) {
-            if ?false(flatten) {
+        temporary_variable function(expand: boolean) {
+            if ?false(expand) {
                 return $[ #last ]
             }
 
@@ -39,7 +39,7 @@
             return list(variable_name)
         }
 
-        combine_equasion function(terms) {
+        combine_equasion function(terms: list) {
             set combined := $[]
 
             iterate terms as key, value {
@@ -54,7 +54,7 @@
             return combined
         }
 
-        pull_operators function(source, [operators]) {
+        pull_operators function(source: list, [operators: identifier]) {
             set index := $2
             set length := length(source)
 
@@ -83,10 +83,10 @@
             return source
         }
 
-        merge_arithmatic_term function(term, flatten) {
+        merge_arithmatic_term function(term: map*list, expand: boolean) {
 
             if ?map(term) {
-                return pass(term, flatten)
+                return pass(term, expand)
             }
 
             set left_operant := call($resolve:merge_arithmatic_term, term:1, $!true)
@@ -95,13 +95,13 @@
             set instruction := list(operator, left_operant, right_operant)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
-        merge_logical_term function(term, flatten) {
+        merge_logical_term function(term: map*list, expand: boolean) {
 
             if ?map(term) {
-                return pass(term, flatten)
+                return pass(term, expand)
             }
 
             set left_operant := call($resolve:merge_logical_term, term:1, $!true)
@@ -111,7 +111,7 @@
             set instruction := list($#boolean, operator_parameter, left_operant, right_operant)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
         keyword function(self) {
@@ -149,19 +149,32 @@
         }
 
         parameter function(self) {
+
             if self:entries:list {
-                return list($#list, self:entries:identifier)
+                set parameter := list($#list, self:entries:identifier)
             } else {
-                return list($#single, self:entries:identifier)
+                set parameter := list($#single, self:entries:identifier)
             }
+
+            if ?present(self:entries, $constraints) {
+                set constraints := $[]
+
+                iterate self:entries:constraints as key, value {
+                    set constraints := append(constraints, value:item)
+                }
+
+                set parameter := append(parameter, constraints)
+            }
+
+            return parameter
         }
 
-        immediate function(self, flatten) {
+        immediate function(self, expand: boolean) {
             set immediate := pass(self:entries:immediate)
             return list($#data, immediate)
         }
 
-        absolute_path function(self, flatten) {
+        absolute_path function(self, expand: boolean) {
             set path := pass(self:entries:path)
 
             if ?path(path) {
@@ -173,41 +186,41 @@
             return list(path)
         }
 
-        relative_path function(self, flatten) {
+        relative_path function(self, expand: boolean) {
             set path := pass(self:entries:path)
             set path := path($#scope, path)
             return list(path)
         }
 
-        index function(self, flatten) {
+        index function(self, expand: boolean) {
             set collection := pass(self:entries:collection, $!true)
             set index := pass(self:entries:index, $!false)
             set instruction := list($#index, collection, index)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
-        instruction function(self, flatten) {
+        instruction function(self, expand: boolean) {
             set instruction_name := keyword(self:entries:instruction)
-            set parameters := call($resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_expand, self:entries:parameters)
             set instruction := push(parameters, instruction_name)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
-        condition function(self, flatten) {
+        condition function(self, expand: boolean) {
             set condition := keyword(self:entries:condition)
             set condition := list($#data, condition)
-            set parameters := call($resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_expand, self:entries:parameters)
             set instruction := push(parameters, condition, $#boolean)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
-        arithmatic_equasion function(self, flatten) {
+        arithmatic_equasion function(self, expand: boolean) {
             set terms := call($resolve:combine_equasion, self:entries:terms)
 
             set terms := call($resolve:pull_operators, terms, $multiply, $divide, $remainder)
@@ -217,10 +230,10 @@
             set terms := call($resolve:pull_operators, terms, $xor)
             set terms := call($resolve:pull_operators, terms, $or)
 
-            return call($resolve:merge_arithmatic_term, terms, flatten)
+            return call($resolve:merge_arithmatic_term, terms, expand)
         }
 
-        logical_equasion function(self, flatten) {
+        logical_equasion function(self, expand: boolean) {
             set terms := call($resolve:combine_equasion, self:entries:terms)
 
             set terms := call($resolve:pull_operators, terms, $bigger, $smaller, $not_smaller, $not_bigger)
@@ -229,19 +242,19 @@
             set terms := call($resolve:pull_operators, terms, $logical_xor)
             set terms := call($resolve:pull_operators, terms, $logical_or)
 
-            return call($resolve:merge_logical_term, terms, flatten)
+            return call($resolve:merge_logical_term, terms, expand)
         }
 
-        concatinate function(self, flatten) {
-            set values := call($resolve:compress_flatten, self:entries:values)
+        concatinate function(self, expand: boolean) {
+            set values := call($resolve:compress_expand, self:entries:values)
             set instruction := push(values, $#string)
 
             set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
-            return call($resolve:temporary_variable, flatten)
+            return call($resolve:temporary_variable, expand)
         }
 
-        substitue_value function(self, flatten) {
-            return pass(self:entries:value, flatten)
+        substitue_value function(self, expand: boolean) {
+            return pass(self:entries:value, expand)
         }
 
         set function(self) {
@@ -335,7 +348,7 @@
         }
 
         ensure function(self) {
-            set parameters := call($resolve:compress_flatten, self:entries:parameters)
+            set parameters := call($resolve:compress_expand, self:entries:parameters)
             set instruction := push(parameters, $[ #data #true ], $#ensure)
             return instruction
         }
@@ -353,9 +366,9 @@
                 set key_path := path($#scope, self:entries:key)
                 set value_path := path($#scope, self:entries:value)
                 set key_parameter := list($#data, key_path)
-                set value_paramter := list($#data, value_path)
+                set value_parameter := list($#data, value_path)
 
-                set instruction := list($#modify, key_parameter, $[ #last:key ], value_paramter, $[ #last:value ])
+                set instruction := list($#modify, key_parameter, $[ #last:key ], value_parameter, $[ #last:value ])
                 set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
             }
 
@@ -471,7 +484,7 @@
             return pass(self:entries:value)
         }
 
-        property function(self, entries) {
+        property function(self, entries: map) {
             set parameters := $[]
 
             iterate self:entries:parameters as key, parameter {

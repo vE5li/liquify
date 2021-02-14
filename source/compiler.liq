@@ -25,7 +25,7 @@ command_lookup {
 
 #functions {
 
-    #main function([arguments]) {
+    #main function([arguments: string]) {
 
         set start_time := time()
         set dependencies := $[ format color debug interface ]
@@ -36,6 +36,7 @@ command_lookup {
         }
 
         set configuration := call($#interface:process_arguments, &root:command_lookup, arguments)
+        set &root:debug := configuration:debug
 
         if configuration:help {
             call($show_help)
@@ -115,20 +116,20 @@ command_lookup {
         call($#print:success, $"completed in " ~ formatted ~ $"s")
     }
 
-    load_cache function(debug) {
+    load_cache function(debug: boolean) {
         set cache_file := environment($"HOME") ~ $"/.cache/liquify." ~ &root:extentions:data
         call($debug_log, debug, $"loading cache from file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
         system($"touch", cache_file)
         return read_map(cache_file)
     }
 
-    save_cache function(debug, cache) {
+    save_cache function(debug: boolean, cache: map) {
         set cache_file := environment($"HOME") ~ $"/.cache/liquify." ~ &root:extentions:data
         call($debug_log, debug, $"saving cache to file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
         write_map(cache_file, cache)
     }
 
-    debug_log function(debug, [arguments]) {
+    debug_log function(debug: boolean, [arguments]) {
         if debug {
             call_list($#print:debug, arguments)
         }

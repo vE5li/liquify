@@ -48,9 +48,14 @@
         [ value := template(function) ]
     }
 
+    parameter_type template(resolve[resolve:parameter_type]) {
+        [ operator(index) | constraints := list(identifier(), operator(multiply)) ]
+        [ ]
+    }
+
     parameter template(resolve[resolve:parameter]) {
-        [ list := $!true | operator(open_square) | identifier := identifier() | operator(close_square) ]
-        [ list := $!false | identifier := identifier() ]
+        [ list := $!true | operator(open_square) | identifier := identifier() | merge(parameter_type) | operator(close_square) ]
+        [ list := $!false | identifier := identifier() | merge(parameter_type) ]
     }
 
     parameter_list template() {
