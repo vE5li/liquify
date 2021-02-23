@@ -72,8 +72,8 @@ command_lookup {
             set cache := call($load_cache, configuration:debug)
         }
 
-        system($"cp", $"-r", $"-T", configuration:source, configuration:output)
-        set result := system($"find", configuration:output, $"-name", $"*." ~ &root:extentions:liquify) @ fix this to use the source directory
+        silent($"cp", $"-r", $"-T", configuration:source, configuration:output)
+        set result := silent($"find", configuration:output, $"-name", $"*." ~ &root:extentions:liquify) @ fix this to use the source directory
         set files := split(result:output, $'\n', $!true)
 
         iterate files as key, input_file {
@@ -83,7 +83,7 @@ command_lookup {
             if configuration:caching {
                 if ?present(cache, input_file) {
                     if cache[input_file][$source] == content {
-                        system($"rm", input_file)
+                        silent($"rm", input_file)
                         write_file(output_file, cache[input_file][$compiled])
                         continue()
                     }
@@ -99,7 +99,7 @@ command_lookup {
             set build_data := build(compiler, parser_data)
 
             write_file(output_file, build_data:code)
-            system($"rm", input_file)
+            silent($"rm", input_file)
 
             if configuration:caching {
                 set entry := map($source := content, $compiled := build_data:code)
@@ -119,7 +119,7 @@ command_lookup {
     load_cache function(debug: boolean) {
         set cache_file := environment($"HOME") ~ $"/.cache/liquify." ~ &root:extentions:data
         call($debug_log, debug, $"loading cache from file " ~ &root:#color:magenta ~ cache_file ~ &root:#color:none)
-        system($"touch", cache_file)
+        silent($"touch", cache_file)
         return read_map(cache_file)
     }
 
