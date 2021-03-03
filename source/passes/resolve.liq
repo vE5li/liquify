@@ -114,6 +114,10 @@
             return call($resolve:temporary_variable, expand)
         }
 
+        selector function(self) {
+            return pass(self:entries:selector)
+        }
+
         keyword function(self) {
             return keyword(self:entries:keyword)
         }
@@ -169,12 +173,12 @@
             return parameter
         }
 
-        immediate function(self, expand: boolean) {
+        immediate function(self) {
             set immediate := pass(self:entries:immediate)
             return list($#data, immediate)
         }
 
-        absolute_path function(self, expand: boolean) {
+        absolute_path function(self) {
             set path := pass(self:entries:path)
 
             if ?path(path) {
@@ -186,7 +190,7 @@
             return list(path)
         }
 
-        relative_path function(self, expand: boolean) {
+        relative_path function(self) {
             set path := pass(self:entries:path)
             set path := path($#scope, path)
             return list(path)
@@ -254,12 +258,16 @@
         }
 
         substitue_value function(self, expand: boolean) {
-            return pass(self:entries:value, expand)
+            if ?present(self:entries, $fixed_value) {
+                return pass(self:entries:fixed_value)
+            } else {
+                return pass(self:entries:value, expand)
+            }
         }
 
         set function(self) {
-            set path := pass(self:entries:path, $!true)
-            set source := pass(self:entries:value, $!false)
+            set path := pass(self:entries:path)
+            set source := pass(self:entries:value, $!true)
             set destination := push(path, $#data)
             set instruction := list($#modify, destination, source)
             return instruction

@@ -1,11 +1,20 @@
 #templates {
 
+    selector template(resolve[resolve:selector]) {
+        [ selector := template(integer) ]
+        [ selector := template(boolean) ]
+        [ selector := template(keyword) ]
+        [ selector := string() ]
+        [ selector := character() ]
+        [ selector := identifier() ]
+    }
+
     keyword template(resolve[resolve:keyword]) {
         [ operator(keyword) | keyword := identifier() ]
     }
 
     path template(resolve[resolve:path]) {
-        [ steps := confirmed(template(value), operator(index)) ]
+        [ steps := confirmed(template(selector), operator(index)) ]
     }
 
     list template(resolve[resolve:list]) {
@@ -68,11 +77,13 @@
     }
 
     absolute_path template(resolve[resolve:absolute_path]) {
-        [ operator(and) | path := template(value) ]
+        [ operator(and) | path := template(path) ]
+        [ operator(and) | path := template(selector) ]
     }
 
     relative_path template(resolve[resolve:relative_path]) {
-        [ path := template(value) ]
+        [ path := template(path) ]
+        [ path := template(selector) ]
     }
 
     index template(resolve[resolve:index]) {
@@ -128,9 +139,9 @@
 
     substitue_value template(resolve[resolve:substitue_value]) {
         [ operator(open_round) | value := template(substitue_value) | operator(close_round) ]
-        [ value := template(immediate) ]
-        [ value := template(absolute_path) ]
-        [ value := template(relative_path) ]
+        [ fixed_value := template(immediate) ]
+        [ fixed_value := template(absolute_path) ]
+        [ fixed_value := template(relative_path) ]
         [ value := template(index) ]
         [ value := template(instruction) ]
         [ value := template(condition) ]
@@ -141,7 +152,9 @@
 
     @ TODO: not substitue_value in the front
     set template(resolve[resolve:set]) {
-        [ identifier(set) | path := template(substitue_value) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | path := template(absolute_path) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | path := template(relative_path) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | path := template(selector) | operator(assign) | value := template(substitue_value) ]
     }
 
     return template(resolve[resolve:return]) {
