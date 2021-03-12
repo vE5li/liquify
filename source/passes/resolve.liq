@@ -205,6 +205,14 @@
             return call($resolve:temporary_variable, expand)
         }
 
+        resolve function(self, expand: boolean) {
+            set path := pass(self:entries:path, $!false)
+            set instruction := list($#resolve, path)
+
+            set &root:scopes:-1:bytecode := merge(&root:scopes:-1:bytecode, instruction)
+            return call($resolve:temporary_variable, expand)
+        }
+
         instruction function(self, expand: boolean) {
             set instruction_name := keyword(self:entries:instruction)
             set parameters := call($resolve:compress_expand, self:entries:parameters)
@@ -268,7 +276,13 @@
         set function(self) {
             set path := pass(self:entries:path)
             set source := pass(self:entries:value, $!true)
-            set destination := push(path, $#data)
+
+            if self:entries:operation == $set {
+                set destination := push(path, $#data)
+            } else self:entries:operation == $modify {
+                set destination := path
+            }
+
             set instruction := list($#modify, destination, source)
             return instruction
         }
@@ -546,7 +560,7 @@
                 }
 
                 set path := path($#scope:entries:#formats, prefix, suffix)
-                modify(path, identifier)
+                set *path := identifier
             } else {
                 error($"invalid property " ~ self:entries:property)
             }

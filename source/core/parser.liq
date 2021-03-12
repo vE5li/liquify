@@ -90,6 +90,10 @@
         [ collection := template(substitue_value) | operator(open_square) | index := template(substitue_value) | operator(close_square) ]
     }
 
+    resolve template(resolve[resolve:resolve]) {
+        [ operator(multiply) | path := template(substitue_value) ]
+    }
+
     instruction template(resolve[resolve:instruction]) {
         [ instruction := identifier() | operator(open_round) | parameters := list(template(substitue_value), operator(comma, assign)) | operator(close_round) ]
         [ instruction := identifier() | operator(open_round) | parameters := $[] | operator(close_round) ]
@@ -142,19 +146,24 @@
         [ fixed_value := template(immediate) ]
         [ fixed_value := template(absolute_path) ]
         [ fixed_value := template(relative_path) ]
-        [ value := template(index) ]
         [ value := template(instruction) ]
         [ value := template(condition) ]
+        [ value := template(concatinate) ]
         [ value := template(logical_equasion) ]
         [ value := template(arithmatic_equasion) ]
-        [ value := template(concatinate) ]
+        [ value := template(resolve) ]
+        [ value := template(index) ]
     }
 
-    @ TODO: not substitue_value in the front
+    operation template() {
+        [ operator(multiply) | operation := $modify ]
+        [ operation := $set ]
+    }
+
     set template(resolve[resolve:set]) {
-        [ identifier(set) | path := template(absolute_path) | operator(assign) | value := template(substitue_value) ]
-        [ identifier(set) | path := template(relative_path) | operator(assign) | value := template(substitue_value) ]
-        [ identifier(set) | path := template(selector) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | merge(operation) | path := template(absolute_path) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | merge(operation) | path := template(relative_path) | operator(assign) | value := template(substitue_value) ]
+        [ identifier(set) | merge(operation) | path := template(selector) | operator(assign) | value := template(substitue_value) ]
     }
 
     return template(resolve[resolve:return]) {
